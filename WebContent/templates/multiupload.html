@@ -1,0 +1,78 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>jQuery File Upload Example</title>
+</head>
+<body>
+	<input id="fileupload" type="file" name="files[]" multiple>
+</body>
+<script type="text/javascript" src="../static/js/jquery-1.11.3.js"></script>
+<script type="text/javascript" src="../static/js/vendor/jquery.ui.widget.js"></script>
+<script type="text/javascript" src="../static/js/jquery.iframe-transport.js"></script>
+<script type="text/javascript" src="../static/js/jquery.fileupload.js"></script>
+<script>
+$(function () {
+	$('#fileupload').fileupload({
+		dataType: 'json',
+		add: function (e, data) {
+			$.each(data.files, function (index, file) {
+				data.context = $('<p/>').text('Uploading...').appendTo(document.body);
+				$.ajax({
+					url: '/xs3_upload_demo/prev_multi_upload',
+					type: 'POST',
+					data: {name: file.name, size: file.size, type:file.type},
+                    crossDomain: false,
+				}).success(function(res, status, xhr){
+					
+					var objs=eval(res); //解析json对象  
+                    var obj = objs[0];  
+                    console.log(obj.total_num)
+                    console.log(obj.upload_id) 
+					parts_cnt = obj.total_num
+					upload_id = obj.upload_id
+					var multi_list = obj.multi_list
+                    for(var i=0; i<parts_cnt; i++)
+                    {
+                        var part_item = multi_list[i]
+                        console.log(part_item.part_url)
+                        console.log(part_item.part_begin + ' -> ' + part_item.part_end);
+                    }
+                    
+					multi_list = obj.multi_list
+					var finishNum = 0;
+					for(var i=0; i<parts_cnt; i++)
+					{
+						blob = file.slice(multi_list[i].part_begin, multi_list[i].part_end);
+						$.ajax({
+							url: multi_list[i].part_url,
+							type: 'PUT',
+							data: blob,
+							contentType: file.type,
+							processData: false,
+							crossDomain: true,
+						}).success(function(res){
+							finishNum++;
+							console.log('current finishnum == '+finishNum);
+							if(finishNum == parts_cnt)
+							{
+								$.ajax({
+									url: '/xs3_upload_demo/complete_multi_upload',
+									type: 'POST',
+									data: {upload_id: upload_id, file_name: file.name, file_type: file.type},
+								})
+							}
+						}).error(function(){
+							console.log("error");
+						});
+					}
+
+					$('<p/>').text(file.name).appendTo(document.body);
+				}).error(function(){
+					console.log("error");
+				});
+			});
+		}
+	});
+});
+</script>
+</html>
