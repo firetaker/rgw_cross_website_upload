@@ -107,7 +107,7 @@ public class Util {
 				xs3_genurl_req.setExpiration(expiration);
 				xs3_genurl_req.setContentType(file_type);
 				xs3_genurl_req.addRequestParameter("uploadId", uploadId);
-				xs3_genurl_req.addRequestParameter("partNumber", String.valueOf(part_no));
+				xs3_genurl_req.addRequestParameter("partNumber", String.valueOf(part_no + 1));
 
 				URL url = xs3_client.generatePresignedUrl(xs3_genurl_req);
 				System.out.println(url.toString());
